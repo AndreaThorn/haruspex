@@ -394,6 +394,7 @@ parser.add_argument('-M', '--metrics',  default=False, const=True,  action='stor
 parser.add_argument('-O', '--original', default=False, const=True,  action='store_const', help="Disable input data augmentation.")
 parser.add_argument('-R', '--reverse',  default=True,  const=False, action='store_const', help="Reverse sorting for secondary structure views.")
 parser.add_argument('-Z', '--no-zoom',  default=False, const=True,  action='store_const', help="Do not rescale voxel size to [1.0; 1.2] Angstrom.")
+parser.add_argument('-F', '--zoom',     default=True,  const=True,  action='store_const', help="Force rescale voxel size to 1.1 Angstrom.")
 parser.add_argument('-r', '--random',   default=False, const=True,  action='store_const', help="Randomly shuffle views before applying limit.")
 parser.add_argument('-d', '--density',  default=False, const=True,  action='store_const', help="Multiply predictions with density before saving.")
 parser.add_argument('-m', '--nomrc',    default=False, const=True,  action='store_const', help="Do not save mrc output during map-prediction.")
@@ -661,7 +662,15 @@ def main(argv):
                 oldVoxelSize, oldCellVec = voxelSize, cellVec
                 rescaledFlag = False
                 originalMrcData = mrcData
-                if not args.no_zoom and (np.max(voxelSize) > 1.2 or np.min(voxelSize) < 1.0):
+		
+		rescale = False
+                # Force rescale...
+                if args.zoom:
+                    rescale = True
+                # ...or rescale if input map is <1.0 or >1.2 A/V 
+                elif not args.no_zoom and (np.max(voxelSize) > 1.2 or np.min(voxelSize) < 1.0):
+                    rescale = True
+                if rescale:
                     print(" -> VoxelSize {} out of [1.0; 1.2] bounds. Rescaling to 1.1 A/V.".format(voxelSize))
                     targetScale = np.asarray([1.1, 1.1, 1.1], dtype=np.float)
                     zoomFactor = np.divide(voxelSize, targetScale)
